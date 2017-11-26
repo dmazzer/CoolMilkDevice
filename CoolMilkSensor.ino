@@ -7,17 +7,29 @@
  */
 
 #include <ESP8266WiFi.h>
-#include <Ethernet.h>
-#include <SPI.h>
 #include "RestClient.h"
-
 
 const char* ssid     = "uaifi";
 const char* password = "adm020311";
 
 const char* host = "data.sparkfun.com";
-const char* streamId   = "....................";
-const char* privateKey = "....................";
+
+void WiFiEvent(WiFiEvent_t event) {
+//    Serial.printf("[WiFi-event] event: %d\n", event);
+
+    switch(event) {
+        case WIFI_EVENT_STAMODE_GOT_IP:
+            Serial.println("");
+            Serial.println("WiFi connected");
+            Serial.println("IP address: ");
+            Serial.println(WiFi.localIP());
+            Serial.println("");
+            break;
+        case WIFI_EVENT_STAMODE_DISCONNECTED:
+            Serial.println("WiFi lost connection");
+            break;
+    }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -30,67 +42,45 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
+  // delete old config
+  WiFi.disconnect(true);
+  delay(200);
+
+  WiFi.onEvent(WiFiEvent);
+
   WiFi.begin(ssid, password);
   
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected");  
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  
 }
 
 int value = 0;
 
-void loop() {
-  delay(5000);
-  ++value;
+String response;
+int statusCode;
 
-  Serial.print("connecting to ");
-  Serial.println(host);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  const int httpPort = 80;
-  if (!client.connect(host, httpPort)) {
-    Serial.println("connection failed");
-    return;
-  }
-  
-  // We now create a URI for the request
-  String url = "/input/";
-  url += streamId;
-  url += "?private_key=";
-  url += privateKey;
-  url += "&value=";
-  url += value;
-  
-  Serial.print("Requesting URL: ");
-  Serial.println(url);
-  
-  // This will send the request to the server
-  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
-               "Connection: close\r\n\r\n");
-  unsigned long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000) {
-      Serial.println(">>> Client Timeout !");
-      client.stop();
-      return;
-    }
-  }
-  
-  // Read all the lines of the reply from server and print them to Serial
-  while(client.available()){
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
-  
-  Serial.println();
-  Serial.println("closing connection");
+RestClient rest_client = RestClient("httpbin.org");
+
+void loop() {
+  delay(1000);
+
+  response = "";
+  Serial.println("-------- get --------");
+  statusCode = rest_client.get("/get", &response);
+  Serial.print("Status code from server: ");
+  Serial.println(statusCode);
+  Serial.print("Response body from server: ");
+  Serial.println(response);
+
+  response = "";
+  Serial.println("-------- get --------");
+  statusCode = rest_client.get("/geta", &response);
+  Serial.print("Status code from server: ");
+  Serial.println(statusCode);
+  Serial.print("Response body from server: ");
+  Serial.println(response);
 }
 
