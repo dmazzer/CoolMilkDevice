@@ -5,7 +5,7 @@ from threading import Thread
 
 
 class Motors():
-    def __init__(self, cool=3, mix=4, q=None):
+    def __init__(self, cool=7, mix=4, q=None):
         self.cool = cool
         self.mix = mix
         self.q = q
@@ -27,19 +27,19 @@ class Motors():
                 status = self.q.get()
                 if status == "start_cool":
                     grovepi.digitalWrite(self.cool,1)
-                    print ("Cool ON")
+                    # print ("Cool ON")
 
                 if status == "stop_cool":
                     grovepi.digitalWrite(self.cool,0)
-                    print ("Cool OFF")
+                    # print ("Cool OFF")
 
                 if status == "start_mix":
                     grovepi.digitalWrite(self.mix,1)
-                    print ("Mix ON")
+                    # print ("Mix ON")
 
                 if status == "stop_mix":
                     grovepi.digitalWrite(self.mix,0)
-                    print ("Mix OFF")
+                    # print ("Mix OFF")
 
             except IOError:				# Print "Error" if communication error encountered
                 print ("Error")
