@@ -18,6 +18,7 @@ from uuid import uuid1
 import sys
 import Queue
 from threading import Thread
+import numpy as np
 
 import time
 sys.path.append('./')
@@ -65,8 +66,7 @@ if __name__ == '__main__':
     
     logger.log("CoolMilk started", 'info')
 
-    # pub = Publisher()
-    # pub.publishData({'temp': 36, 'threshold': 37})
+    pub = Publisher()
 
     button_queue = Queue.Queue()
     buttons = Buttons(q=button_queue)
@@ -83,16 +83,21 @@ if __name__ == '__main__':
     process_start_time = 0
     pricess_mixing_start_time = 0
 
+
     # process parameters
 
     time_milking = 60
+    time_milking_message = 0
 
-    time_mixing_stop = 20
+    time_mixing_stop = 10
     time_mixing_runnig = 4
 
     temp_min = 14.0
     temp_max = 18.0
     temp_max_milking = 30.0
+
+    temp = temp_max
+
 
     while True:
         if button_queue.empty() == False:
@@ -104,28 +109,83 @@ if __name__ == '__main__':
                     motors_queue.put('stop_mix')
                 else:
                     process_start_stop_status = 'start'
-                    process_mixer_status = 'running-start'
+                    process_mixer_status = 'running_start'
                     process_cooling_status = 'start'
+                    time_milking_message = 0
                     process_start_time = int(time.time())
-                    process_start_time = int(time.time())
-                    # motors_queue.put('start_cool')
+                    pricess_mixing_start_time = int(time.time())
                     motors_queue.put('start_mix')
                 print('Processes start/stop: ' + process_start_stop_status)
             button_queue.task_done()
         
+        if sensors_queue.empty() == False:
+            temp_array = []
+            while sensors_queue.empty() == False:
+                temp_array.append(sensors_queue.get())
+            temp = sum(temp_array) / float(len(temp_array)) 
+            temp = min(temp, 25.0)
+            sensors_queue.queue.clear()
+            print('Temp: ' + str(temp))
+
         if process_start_stop_status == 'start':
             if int(time.time()) > (process_start_time + time_milking):
-                print('Milking time endded')
-            
-            if sensors_queue.empty() == False:
-                temp = sensors_queue.get()
-                print('Temp: ' + str(temp))
-                if temp >= temp_max:
-                    motors_queue.put('start_cool')
-                if temp <= temp_min:
-                    motors_queue.put('stop_cool')
+                if time_milking_message == 0:
+                    time_milking_message = 1
+                    print('Milking time endded')
 
+            if temp >= temp_max:
+                motors_queue.put('start_cool')
+            if temp <= temp_min:
+                motors_queue.put('stop_cool')
+
+            if process_mixer_status == 'running_start':
+                if int(time.time()) > (pricess_mixing_start_time + time_mixing_runnig):
+                    print('Mixer stop')
+                    process_mixer_status = 'running_stop'
+                    motors_queue.put('stop_mix')
+                    pricess_mixing_start_time = int(time.time())
+
+            if process_mixer_status == 'running_stop':
+                if int(time.time()) > (pricess_mixing_start_time + time_mixing_stop):
+                    print('Mixer start')
+                    process_mixer_status = 'running_start'
+                    motors_queue.put('start_mix')
+                    pricess_mixing_start_time = int(time.time())
+                    
+        message = dict()
+        if process_mixer_status == 'running_start':
+            message['mixer'] = 1
+        else:
+            message['mixer'] = 0
+        
+        if process_start_stop_status == 'start':
+            message['process'] = 1
+        else:
+            message['process'] = 0
+        
+        if process_cooling_status == 'start':
+            message['cooler'] = 1
+        else:
+            message['cooler'] = 0
+        
+        message['temp'] = temp
+
+        process_mask = ((temp_max - temp_max_milking)/float(time_milking)) * float(int(time.time()) - process_start_time) + temp_max_milking
+        process_mask = min(process_mask, temp_max_milking)
+        process_mask = max(process_mask, temp_max)
+        message['mask'] = process_mask
+        
+        print(str(message))
+
+        pub.publishData(message)
+
+
+
+
+            
         time.sleep(1)
+
+
 
     print('comecou')
     motors_queue.put("start_mix")

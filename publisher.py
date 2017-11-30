@@ -15,7 +15,6 @@ class Publisher(object):
             'content-type': 'application/json',
             'x-access-token': self.token
         }
-        print("Publish...")
         r = requests.post(url, json=payload, headers=headers)
         return r.json()
 
