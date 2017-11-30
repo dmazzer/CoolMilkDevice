@@ -15,11 +15,16 @@ __email__ = "daniel.mazzer@inatel.br"
 import logging
 import signal
 from uuid import uuid1
+import sys
+import Queue
+from threading import Thread
 
-import Publisher
+import time
+sys.path.append('./')
 
-logger = Logger('debug')
-
+from publisher import Publisher
+from buttons import Buttons
+from motors import Motors
 
 class Logger():
     def __init__(self, level='info'):
@@ -53,9 +58,42 @@ class Logger():
         self.setlevelfun(msg)
 
 
+logger = Logger('debug')
+
 if __name__ == '__main__':
     
     logger.log("CoolMilk started", 'info')
+
+    logger.log("publishing...")
+    
+    pub = Publisher()
+    pub.publishData({'temp': 36, 'threshold': 37})
+
+    button_queue = Queue.Queue()
+    buttons = Buttons(q=button_queue)
+
+    motors_queue = Queue.Queue()
+    motors = Motors(q=motors_queue)
+    
+    print('comecou')
+    motors_queue.put("start_mix")
+    time.sleep(1)
+    motors_queue.put("stop_mix")
+    time.sleep(1)
+    print('teminou')
+
+    print("queues")
+    while True:
+        item = button_queue.get()
+        print("item: " + str(item))
+        if item:
+            motors_queue.put("start_mix")
+            
+        button_queue.task_done()
+
+
+
+    logger.log("done...")
 
     # Hold forever
     def do_exit(sig, stack):
