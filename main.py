@@ -60,7 +60,7 @@ class Logger():
         self.setlevelfun(msg)
 
 
-logger = Logger('debug')
+logger = Logger('info')
 
 if __name__ == '__main__':
     
@@ -122,10 +122,11 @@ if __name__ == '__main__':
             temp_array = []
             while sensors_queue.empty() == False:
                 temp_array.append(sensors_queue.get())
-            temp = sum(temp_array) / float(len(temp_array)) 
-            temp = min(temp, 25.0)
+            temp_x = sum(temp_array) / float(len(temp_array)) 
+            if temp_x < 30:
+                temp = temp_x
             sensors_queue.queue.clear()
-            print('Temp: ' + str(temp))
+            # print('Temp: ' + str(temp))
 
         if process_start_stop_status == 'start':
             if int(time.time()) > (process_start_time + time_milking):
