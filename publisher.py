@@ -16,7 +16,9 @@ class Publisher(object):
             'x-access-token': self.token
         }
         r = requests.post(url, json=payload, headers=headers)
-        return r.json()
+        print (r.status_code)
+        return r
+
 
 
         #print publishData({'temp': 36, 'threshold': 37})

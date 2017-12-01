@@ -21,7 +21,8 @@ class Buttons():
             try:
                 button = grovepi.digitalRead(self.digital_port)
                 if button == 1:
-                    print("Button pressed!")
+                    # print("Button pressed!")
+                    q.queue.clear()
                     q.put(1)
                 
                 time.sleep(1)

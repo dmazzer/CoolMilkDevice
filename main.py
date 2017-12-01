@@ -105,6 +105,8 @@ if __name__ == '__main__':
             if item == 1:
                 if process_start_stop_status == 'start': 
                     process_start_stop_status = 'stop' 
+                    process_cooling_status = 'stop'
+                    process_mixer_status = 'stop'
                     motors_queue.put('stop_cool')
                     motors_queue.put('stop_mix')
                 else:
@@ -136,8 +138,10 @@ if __name__ == '__main__':
 
             if temp >= temp_max:
                 motors_queue.put('start_cool')
+                process_cooling_status = 'start'
             if temp <= temp_min:
                 motors_queue.put('stop_cool')
+                process_cooling_status = 'stop'
 
             if process_mixer_status == 'running_start':
                 if int(time.time()) > (pricess_mixing_start_time + time_mixing_runnig):
