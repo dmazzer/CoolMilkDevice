@@ -22,7 +22,7 @@ class Sensors():
                 sensor_value = ((100.0 * sensor_value)/1024.0) * 5.0
                 q.put(sensor_value)
                 # print ("sensor_value = %.2f" %(sensor_value))
-                time.sleep(0.2)
+                time.sleep(0.5)
 
             except IOError:
                 print ("Error")
